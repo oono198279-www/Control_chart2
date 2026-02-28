@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#777777">
+
+<!-- iOS保険 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>管理図2</title>
+<style>
+  :root{ --w:860px }
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Yu Gothic UI","Hiragino Kaku Gothic ProN",sans-serif;
+    margin:0;
+    background:#eee;
+    padding-top:calc(50px + env(safe-area-inset-top));
+  }
+
+  /* ── 上部ツールバー ─────────────────── */
+  .topBar{
+    position:fixed;
+    top:0; left:0; right:0;
+    padding-top:calc(8px + env(safe-area-inset-top));
+    padding-left:calc(8px + env(safe-area-inset-left));
+    padding-right:calc(8px + env(safe-area-inset-right));
+    padding-bottom:8px;
+    background:#f5f5f5;
+    z-index:100;
+    box-shadow:0 2px 0 #ccc;
+  }
+  .topBarInner{
+    max-width:var(--w);
+    margin:0 auto;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .topBarInner button{
+    flex:1 1 0;
+    padding:10px 6px;
+    border:none;
+    border-radius:8px;
+    background:#777;
+    color:#fff;
+    font-weight:700;
+    font-size:.9rem;
+    box-shadow:0 2px 0 #555;
+    white-space:nowrap;
+  }
+
+  /* ── メイン ─────────────────────────── */
+  .box{
+    margin:10px;
+    background:#fff;
+    border:2px solid #666;
+    border-radius:8px;
+    box-shadow:0 2px 0 #bbb;
+    padding:8px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    max-width:var(--w);
+    table-layout:fixed;
+  }
+  th,td{
+    border:1px solid #444;
+    padding:6px;
+  }
+  th{
+    background:#f0f0f0;
+    text-align:center;
+  }
+  td.no{
+    width:6.5ch;
+    text-align:center;
+    background:#fafafa;
+    font-weight:600;
+  }
+  td.head1{
+    background:#fafafa;
+    font-weight:700;
+    text-align:center;
+  }
+  td.cell{
+    min-height:28px;
+    text-align:left;
+    background:#ffff99;
+  }
+  td.cell.disabled{
+    background:#e9e9e9;
+    color:#777;
+  }
+  tr.header td{background:#fff}
+  td.calc{
+    background:#fff;
+    text-align:left;
+  }
+  .sel{
+    outline:3px solid #00a050;
+    outline-offset:-3px;
+  }
+  .r-alert{
+    color:red;
+    font-weight:800;
+  }
+
+  /* ── チャンネルボタン ───────────────── */
+  .chbar{
+    margin-top:8px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    max-width:var(--w);
+  }
+  .chbtn{
+    padding:10px 6px;
+    border:none;
+    border-radius:10px;
+    background:#6b6b6b;
+    color:#fff;
+    font-weight:800;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .chbtn.active{
+    background:#fff;
+    color:#111;
+    outline:3px solid #333;
+    outline-offset:-3px;
+  }
+
+  /* ── テンキー ───────────────────────── */
+  .pad{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    background:#888;
+    padding:8px 8px 80px;
+    border-top:2px solid #666;
+    z-index:10;
+  }
+  .padgrid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    max-width:var(--w);
+    margin:0 auto;
+  }
+  .pad button{
+    height:48px;
+    border:none;
+    border-radius:10px;
+    color:#fff;
+    font-size:1.05rem;
+    font-weight:700;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    -webkit-user-select:none;
+    transition:transform .06s ease, filter .06s ease;
+  }
+  .pad button.num{ background:#555555; }
+  .pad .gray{ background:#6b6b6b; }
+  .pad button[data-act="up"],
+  .pad button[data-act="down"],
+  .pad button[data-act="left"],
+  .pad button[data-act="right"]{ background:#EE7800; }
+
+  .pad button.fx-pressed,
+  .pad button:active{
+    transform:scale(0.96);
+    filter:brightness(0.9);
+  }
+  .pad .tall{
+    height:104px;
+    grid-row:span 2;
+  }
+  .wrap{padding-bottom:220px}
+
+  /* ── モーダル ───────────────────────── */
+  .modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.25);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+  }
+  .dlg{
+    background:#fff;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+    width:min(92%,520px);
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .dlg h2{
+    margin:0 0 14px;
+    font-size:1.2rem;
+    text-align:center;
+  }
+  .dlg label{
+    display:block;
+    margin-top:10px;
+    font-weight:700;
+  }
+  .dlg input,
+  .dlg select{
+    width:100%;
+    padding:8px;
+    border:1px solid #999;
+    border-radius:6px;
+    margin-top:4px;
+  }
+  .dlg .row{
+    display:flex;
+    gap:12px;
+    margin-top:18px;
+  }
+  .dlg button{
+    flex:1 1 0;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    background:#777;
+    color:#fff;
+    font-weight:800;
+    box-shadow:0 2px 0 #555;
+  }
+  details{
+    border-top:1px solid #ddd;
+    padding-top:8px;
+    margin-top:8px;
+  }
+  details summary{
+    cursor:pointer;
+    font-weight:800;
+    padding:6px 0;
+  }
+  .miniNote{
+    font-size:.85rem;
+    color:#444;
+    margin-top:6px;
+  }
+  .ghost{
+    background:#999 !important;
+  }
+  .danger{
+    background:#b33 !important;
+  }
+
+  .toggleRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin:6px 0 10px;
+  }
+  .toggleRow select{
+    width:auto;
+    flex:1 1 auto;
+  }
+
+  .toast{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:170px;
+    background:rgba(0,0,0,.75);
+    color:#fff;
+    padding:10px 14px;
+    border-radius:12px;
+    display:none;
+    z-index:200;
+    font-weight:700;
+    max-width:min(92vw,520px);
+    text-align:center;
+  }
+</style>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+</head>
+<body>
+
+<!-- 上部ボタンバー -->
+<div class="topBar">
+  <div class="topBarInner">
+    <button id="exportJsonBtn">保存</button>
+    <button id="importJsonBtn">復元</button>
+    <button id="settingBtn">設定</button>
+    <button id="resetBtn">リセット</button>
+    <input type="file" id="jsonFileInput" accept="application/json" style="display:none">
+  </div>
+</div>
+
+<div class="box wrap">
+  <table id="grid" aria-label="管理表">
+    <thead>
+      <tr id="headerRow">
+        <th>項目</th>
+        <th id="th0">列1</th><th id="th1">列2</th><th id="th2">列3</th><th id="th3">列4</th>
+      </tr>
+    </thead>
+    <tbody id="gridBody">
+      <tr class="header">
+        <td id="xLabel" class="head1">x̃</td>
+        <td class="calc" data-calc="x" data-vc="0"></td>
+        <td class="calc" data-calc="x" data-vc="1"></td>
+        <td class="calc" data-calc="x" data-vc="2"></td>
+        <td class="calc" data-calc="x" data-vc="3"></td>
+      </tr>
+      <tr class="header">
+        <td class="head1">R</td>
+        <td class="calc" data-calc="r" data-vc="0"></td>
+        <td class="calc" data-calc="r" data-vc="1"></td>
+        <td class="calc" data-calc="r" data-vc="2"></td>
+        <td class="calc" data-calc="r" data-vc="3"></td>
+      </tr>
+      <!-- No.1〜5 をJSで生成 -->
+    </tbody>
+  </table>
+
+  <!-- チャンネルボタン（旧 No.6/7 領域） -->
+  <div class="chbar" id="chbar">
+    <button class="chbtn" data-ch="0">CH1</button>
+    <button class="chbtn" data-ch="1">CH2</button>
+    <button class="chbtn" data-ch="2">CH3</button>
+    <button class="chbtn" data-ch="3">CH4</button>
+  </div>
+</div>
+
+<!-- 専用テンキー -->
+<div class="pad">
+  <div class="padgrid">
+    <button data-act="up">↑</button>
+    <button data-act="down">↓</button>
+    <button data-act="left">←</button>
+    <button data-act="right">→</button>
+
+    <button class="num" data-val="7">7</button>
+    <button class="num" data-val="8">8</button>
+    <button class="num" data-val="9">9</button>
+    <button class="gray" data-act="bs">⌫</button>
+
+    <button class="num" data-val="4">4</button>
+    <button class="num" data-val="5">5</button>
+    <button class="num" data-val="6">6</button>
+    <button class="gray" data-act="tab">TAB</button>
+
+    <button class="num" data-val="1">1</button>
+    <button class="num" data-val="2">2</button>
+    <button class="num" data-val="3">3</button>
+
+    <button class="gray tall" data-act="enter" style="grid-column:4;grid-row:4 / span 2;">↩︎</button>
+    <button class="num" data-val="-">-</button>
+    <button class="num" data-val="0">0</button>
+    <button class="num" data-val=".">.</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- 設定モーダル -->
+<div id="settingModal" class="modal" role="dialog" aria-modal="true">
+  <div class="dlg">
+    <h2>設定</h2>
+    <div id="settingForm"></div>
+    <div class="row">
+      <button id="settingSave">保存</button>
+      <button id="settingCancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- リセット確認モーダル -->
+<div id="resetModal" class="modal">
+  <div class="dlg">
+    <h2>本当にリセットしますか？</h2>
+    <div class="row">
+      <button id="resetYes" class="danger">はい</button>
+      <button id="resetNo">はぁ？</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 定数とキー ===== */
+const VISIBLE_COLS = 4;
+const ALL_COLS = 16;
+const ROWS = 5; // No.1〜No.5 固定
+const KEY_VALUES = "control-chart2-values-v1";
+const KEY_SETTINGS = "control-chart2-settings-v1";
+const BACKUP_VERSION = 1;
+
+const DEFAULT_SETTINGS = {
+  mode: "median", // "median" = x̃, "mean" = x̄
+  channels: ["CH1","CH2","CH3","CH4"],
+  cols: Array.from({length: ALL_COLS}, (_,i)=>({
+    n: 5,
+    header: `項目${i+1}`,
+    decimals: null,  // null=可変
+    rLimit: 0.1
+  }))
+};
+
+function el(q){return document.querySelector(q);}
+
+/* ===== 行生成（No.1〜5） ===== */
+(function buildRows(){
+  const tb = el('#gridBody');
+  for(let r=0;r<ROWS;r++){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="no">No.${r+1}</td>` +
+      Array.from({length:VISIBLE_COLS},(_,vc)=>`<td class="cell" data-r="${r}" data-vc="${vc}"></td>`).join('');
+    tb.appendChild(tr);
+  }
+})();
+
+/* ===== 設定ロード ===== */
+let settings = (()=>{ try{
+  return JSON.parse(localStorage.getItem(KEY_SETTINGS)||"null") || DEFAULT_SETTINGS;
+}catch{ return DEFAULT_SETTINGS; }})();
+
+/* 欠損補完（将来拡張用） */
+(function normalizeSettings(){
+  if(!settings || typeof settings!=="object") settings = DEFAULT_SETTINGS;
+  settings.mode = (settings.mode==="mean" ? "mean" : "median");
+  if(!Array.isArray(settings.channels) || settings.channels.length!==4){
+    settings.channels = [...DEFAULT_SETTINGS.channels];
+  }
+  if(!Array.isArray(settings.cols) || settings.cols.length!==ALL_COLS){
+    const base = [...DEFAULT_SETTINGS.cols];
+    const old = Array.isArray(settings.cols) ? settings.cols : [];
+    for(let i=0;i<ALL_COLS;i++){
+      base[i] = Object.assign({}, base[i], old[i]||{});
+      base[i].n = (base[i].n===3 ? 3 : 5);
+      base[i].header = String(base[i].header ?? `項目${i+1}`);
+      base[i].decimals = (base[i].decimals===null ? null : Number(base[i].decimals));
+      if(![null,1,2,3].includes(base[i].decimals)) base[i].decimals = null;
+      base[i].rLimit = Number(base[i].rLimit);
+      if(!isFinite(base[i].rLimit)) base[i].rLimit = 0;
+    }
+    settings.cols = base;
+  }
+})();
+
+function saveSettings(){ localStorage.setItem(KEY_SETTINGS, JSON.stringify(settings)); }
+
+/* ===== 値マトリクス（5×16） ===== */
+function emptyMatrix(){
+  return Array.from({length: ROWS}, ()=>Array.from({length: ALL_COLS}, ()=>""));
+}
+let values = (()=>{ try{
+  const v = JSON.parse(localStorage.getItem(KEY_VALUES)||"null");
+  if(Array.isArray(v) && v.length===ROWS) return v.map(row=>{
+    const rr = Array.isArray(row)?row:[];
+    const out = Array.from({length: ALL_COLS}, (_,i)=>String(rr[i]??""));
+    return out;
+  });
+}catch{}
+  return emptyMatrix();
+})();
+
+/* ===== チャンネル ===== */
+let ch = 0; // 0..3
+function saveState(){
+  saveSettings();
+  localStorage.setItem(KEY_VALUES, JSON.stringify(values));
+  localStorage.setItem("control-chart2-selected-ch", String(ch));
+}
+(function loadSelectedCh(){
+  const s = localStorage.getItem("control-chart2-selected-ch");
+  const n = Number(s);
+  if(isFinite(n)) ch = Math.max(0, Math.min(3, n|0));
+})();
+
+function colOffset(){ return ch * VISIBLE_COLS; }
+function globalCol(vc){ return colOffset() + vc; }
+
+/* ===== 便利関数 ===== */
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function getTd(r,vc){ return document.querySelector(`td.cell[data-r="${r}"][data-vc="${vc}"]`); }
+function getTdText(r,gc){ return values[r]?.[gc] ?? ""; }
+function setTdText(r,gc,txt){ values[r][gc] = txt; }
+
+function median(arr){
+  const b=[...arr].sort((x,y)=>x-y);
+  const n=b.length;
+  if(!n) return null;
+  const m=Math.floor(n/2);
+  return n%2 ? b[m] : (b[m-1]+b[m])/2;
+}
+function mean(arr){
+  if(!arr.length) return null;
+  const s = arr.reduce((a,b)=>a+b,0);
+  return s/arr.length;
+}
+function fmtFlexible(num){
+  if(!isFinite(num)) return "";
+  let s = Number(num).toFixed(4).replace(/\.?0+$/,'');
+  if(!s.includes('.')) s += '.0';
+  const d = (s.split('.')[1]||'').length;
+  return Number(num).toFixed(Math.min(3, Math.max(1, d)));
+}
+function formatByGlobalCol(num, gc){
+  const k = settings.cols[gc].decimals;
+  return k==null ? fmtFlexible(num) : (isFinite(num) ? Number(num).toFixed(k) : "");
+}
+
+function toast(msg){
+  const t=el('#toast');
+  t.textContent=msg;
+  t.style.display='block';
+  clearTimeout(toast._timer);
+  toast._timer=setTimeout(()=>t.style.display='none',1200);
+}
+
+/* ===== 表描画 ===== */
+function updateXLabel(){
+  el('#xLabel').textContent = (settings.mode==="mean" ? "x̄" : "x̃");
+}
+function updateChannelButtons(){
+  document.querySelectorAll('.chbtn').forEach(b=>{
+    const i = Number(b.dataset.ch);
+    b.textContent = settings.channels[i] || `CH${i+1}`;
+    b.classList.toggle('active', i===ch);
+  });
+}
+function updateHeaders(){
+  for(let vc=0; vc<VISIBLE_COLS; vc++){
+    const gc = globalCol(vc);
+    el(`#th${vc}`).textContent = settings.cols[gc].header || `項目${gc+1}`;
+  }
+}
+
+/* 入力可能状態（n=3の列はNo.4/No.5を無効化） */
+function isCellEditable(r, gc){
+  const n = settings.cols[gc].n;
+  if(n===3 && r>=3) return false;
+  return true;
+}
+function renderCells(){
+  for(let r=0;r<ROWS;r++){
+    for(let vc=0;vc<VISIBLE_COLS;vc++){
+      const gc = globalCol(vc);
+      const td = getTd(r,vc);
+      td.textContent = getTdText(r,gc);
+      const editable = isCellEditable(r,gc);
+      td.classList.toggle('disabled', !editable);
+      if(!editable) td.classList.remove('sel');
+    }
+  }
+}
+
+/* ===== 計算 ===== */
+function calc(){
+  updateXLabel();
+  for(let vc=0; vc<VISIBLE_COLS; vc++){
+    const gc = globalCol(vc);
+    const n = settings.cols[gc].n;
+    const takeRows = (n===3 ? 3 : 5);
+    const colVals = [];
+    for(let r=0; r<takeRows; r++){
+      const v = parseFloat(getTdText(r,gc));
+      if(!isNaN(v)) colVals.push(v);
+    }
+    const x = (settings.mode==="mean") ? mean(colVals) : median(colVals);
+    const rng = colVals.length ? (Math.max(...colVals)-Math.min(...colVals)) : null;
+
+    const xCell = document.querySelector(`td.calc[data-calc="x"][data-vc="${vc}"]`);
+    const rCell = document.querySelector(`td.calc[data-calc="r"][data-vc="${vc}"]`);
+
+    xCell.textContent = (x==null ? "" : formatByGlobalCol(x,gc));
+    rCell.textContent = (rng==null ? "" : formatByGlobalCol(rng,gc));
+
+    const lim = Number(settings.cols[gc].rLimit);
+    const alertOn = (rng!=null && isFinite(lim) && lim>0 && rng>lim);
+    rCell.classList.toggle("r-alert", alertOn);
+  }
+}
+
+/* ===== 入力操作（テンキー） ===== */
+let cur = { r:0, vc:0 };
+
+function focusCell(r,vc){
+  r = clamp(r,0,ROWS-1);
+  vc = clamp(vc,0,VISIBLE_COLS-1);
+
+  // そのセルが編集不可なら、上方向に探す（n=3のNo.4/5対策）
+  let gc = globalCol(vc);
+  if(!isCellEditable(r,gc)){
+    // まず上へ
+    let rr = r;
+    while(rr>=0 && !isCellEditable(rr,gc)) rr--;
+    if(rr>=0) r = rr;
+    else{
+      // それでもダメなら他列
+      for(let tryVc=0; tryVc<VISIBLE_COLS; tryVc++){
+        gc = globalCol(tryVc);
+        if(isCellEditable(0,gc)){ vc = tryVc; r = 0; break; }
+      }
+    }
+  }
+
+  document.querySelectorAll('td.cell').forEach(td=>td.classList.remove('sel'));
+  const td = getTd(r,vc);
+  if(td && !td.classList.contains('disabled')){
+    td.classList.add('sel');
+    td.scrollIntoView({block:"nearest"});
+  }
+  cur = {r,vc};
+}
+
+function put(chKey){
+  const gc = globalCol(cur.vc);
+  if(!isCellEditable(cur.r,gc)) return;
+
+  const current = String(getTdText(cur.r,gc) || "");
+  let s = current;
+
+  if(chKey==='-'){
+    s = s.startsWith('-') ? s.slice(1) : '-' + s;
+  }else if(chKey==='.'){
+    if(!s.includes('.')) s = (s==='' ? '0.' : s + '.');
+  }else if(/[0-9]/.test(chKey)){
+    s += chKey;
+  }
+  setTdText(cur.r,gc,s);
+  renderCells();
+  calc();
+  saveState();
+}
+
+function bs(){
+  const gc = globalCol(cur.vc);
+  if(!isCellEditable(cur.r,gc)) return;
+  const s = String(getTdText(cur.r,gc) || "");
+  setTdText(cur.r,gc, s.slice(0,-1));
+  renderCells();
+  calc();
+  saveState();
+}
+
+function move(dvc, dr){
+  focusCell(cur.r + dr, cur.vc + dvc);
+}
+function enter(){ move(0,1); }
+function tab(){
+  if(cur.vc < VISIBLE_COLS-1) move(1,0);
+  else focusCell(cur.r+1 > ROWS-1 ? 0 : cur.r+1, 0);
+}
+
+/* ===== 疑似ハプティック ＋ ボタン制御（旧版踏襲） ===== */
+const feedback=(()=>{
+  let ctx;
+  const ensure=()=>{
+    if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();
+    return ctx;
+  };
+  const click=()=>{
+    const a=ensure();
+    const o=a.createOscillator();
+    const g=a.createGain();
+    o.type='square';
+    o.frequency.value=180;
+    g.gain.setValueAtTime(0.001,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.00001,a.currentTime+0.03);
+    o.connect(g).connect(a.destination);
+    o.start();
+    o.stop(a.currentTime+0.03);
+  };
+  const flash=el=>{
+    if(!el)return;
+    el.classList.add('fx-pressed');
+    setTimeout(()=>el.classList.remove('fx-pressed'),80);
+  };
+  return el=>{
+    if(navigator.vibrate)navigator.vibrate(10);
+    else click();
+    flash(el);
+  };
+})();
+
+const pressLock=new WeakSet();
+function bindPadButton(b){
+  const act=b.dataset.act,val=b.dataset.val;
+  const onDown=e=>{
+    e.preventDefault();e.stopPropagation();
+    if(pressLock.has(b))return;
+    pressLock.add(b);
+    feedback(b);
+    if(act){
+      if(act==='up')   move(0,-1);
+      if(act==='down') move(0, 1);
+      if(act==='left') move(-1,0);
+      if(act==='right')move( 1,0);
+      if(act==='bs')   bs();
+      if(act==='tab')  tab();
+      if(act==='enter')enter();
+    }else if(val){
+      put(val);
+    }
+  };
+  const onUp=()=>pressLock.delete(b);
+  b.addEventListener('pointerdown',onDown,{passive:false});
+  b.addEventListener('pointerup',onUp);
+  b.addEventListener('pointercancel',onUp);
+  b.addEventListener('click',e=>e.preventDefault(),{passive:false});
+}
+
+/* セルクリック */
+document.querySelectorAll('td.cell').forEach(td=>{
+  td.addEventListener('pointerdown',()=>{
+    const r = parseInt(td.dataset.r,10);
+    const vc = parseInt(td.dataset.vc,10);
+    focusCell(r,vc);
+  });
+});
+document.querySelectorAll('.pad button').forEach(bindPadButton);
+
+/* ===== チャンネル切替 ===== */
+function switchChannel(next){
+  const n = clamp(next,0,3);
+  if(n===ch) return;
+  ch = n;
+  updateHeaders();
+  updateChannelButtons();
+  renderCells();
+  calc();
+  saveState();
+  // 現在vc/rを維持して再フォーカス
+  focusCell(cur.r, cur.vc);
+}
+
+document.querySelectorAll('.chbtn').forEach(btn=>{
+  btn.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    feedback(btn);
+    switchChannel(Number(btn.dataset.ch));
+  }, {passive:false});
+});
+
+/* ===== モーダル共通 ===== */
+function openModal(m){ m.style.display='flex'; }
+function closeModal(m){ m.style.display='none'; }
+
+/* リセット */
+const resetModal=el('#resetModal');
+el('#resetBtn').onclick=()=>openModal(resetModal);
+el('#resetNo').onclick =()=>closeModal(resetModal);
+el('#resetYes').onclick=()=>{
+  values = emptyMatrix();
+  renderCells();
+  calc();
+  saveState();
+  closeModal(resetModal);
+};
+
+/* ===== 設定モーダル ===== */
+const settingModal=el('#settingModal');
+
+function buildSettingsUI(){
+  const form=el('#settingForm');
+  form.innerHTML="";
+
+  // 全体：解析モード
+  form.insertAdjacentHTML('beforeend', `
+    <div style="border-top:1px solid #ccc;padding-top:8px">
+      <label>解析方法（全体共通）</label>
+      <div class="toggleRow">
+        <select id="modeSel">
+          <option value="median"${settings.mode==="median"?' selected':''}>x̃（中央値）</option>
+          <option value="mean"${settings.mode==="mean"?' selected':''}>x̄（平均）</option>
+        </select>
+      </div>
+      <div class="miniNote">切替すると表の記号（x̃ / x̄）と計算方法が変わります。</div>
+    </div>
+  `);
+
+  // チャンネル名
+  form.insertAdjacentHTML('beforeend', `
+    <div style="border-top:1px solid #ccc;margin-top:10px;padding-top:8px">
+      <label>チャンネル名（表示名）</label>
+      ${settings.channels.map((name,i)=>`
+        <label style="margin-top:8px">CH${i+1}（列${i*4+1}〜${i*4+4}）</label>
+        <input type="text" id="chName${i}" value="${escapeHtml(name)}">
+      `).join('')}
+      <button id="applyCh1AllBtn" class="ghost" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;color:#fff;font-weight:900;box-shadow:0 2px 0 #666;">CH1の列設定をCH2〜CH4へコピー</button>
+      <div class="miniNote">列1→5/9/13、列2→6/10/14…のように上書きコピーします。</div>
+    </div>
+  `);
+
+  // 列設定（1〜16）
+  form.insertAdjacentHTML('beforeend', `
+    <div style="border-top:1px solid #ccc;margin-top:10px;padding-top:8px">
+      <label>列別設定（1〜16）</label>
+      <div class="miniNote">CH切替は表示窓（1〜4 / 5〜8 / 9〜12 / 13〜16）の切替です。ここで列ごとの設定を行います。</div>
+      ${settings.cols.map((col,i)=>`
+        <details ${i<4?'open':''}>
+          <summary>列${i+1}：${escapeHtml(col.header||`項目${i+1}`)}</summary>
+          <label>n（サブグループ数）</label>
+          <select id="n${i}">
+            <option value="3"${col.n===3?' selected':''}>3</option>
+            <option value="5"${col.n!==3?' selected':''}>5</option>
+          </select>
+
+          <label>項目名</label>
+          <input type="text" id="hdr${i}" value="${escapeHtml(col.header)}">
+
+          <label>小数桁</label>
+          <select id="dec${i}">
+            <option value="null"${col.decimals==null?' selected':''}>可変</option>
+            <option value="1"${col.decimals===1?' selected':''}>1桁</option>
+            <option value="2"${col.decimals===2?' selected':''}>2桁</option>
+            <option value="3"${col.decimals===3?' selected':''}>3桁</option>
+          </select>
+
+          <label>R上限値</label>
+          <input type="number" step="0.001" id="lim${i}" value="${col.rLimit}">
+        </details>
+      `).join('')}
+    </div>
+  `);
+
+  // ボタン動作（CH1→全てコピー）
+  const applyBtn = el('#applyCh1AllBtn');
+  applyBtn.onclick = (e)=>{
+    e.preventDefault();
+    // 列1〜4の設定を、+4, +8, +12 へコピー
+    for(let base=0;base<4;base++){
+      const src = readColInputs(base);
+      for(const off of [4,8,12]){
+        writeColInputs(base+off, src);
+      }
+    }
+    toast("CH1の列設定をコピーしました");
+  };
+}
+
+function readColInputs(i){
+  const n = Number(el(`#n${i}`).value)===3 ? 3 : 5;
+  const header = el(`#hdr${i}`).value || `項目${i+1}`;
+  const v = el(`#dec${i}`).value;
+  const decimals = (v==="null" ? null : Number(v));
+  const rLimit = parseFloat(el(`#lim${i}`).value) || 0;
+  return {n, header, decimals, rLimit};
+}
+function writeColInputs(i, obj){
+  if(!el(`#n${i}`)) return;
+  el(`#n${i}`).value = String(obj.n);
+  el(`#hdr${i}`).value = obj.header;
+  el(`#dec${i}`).value = (obj.decimals==null ? "null" : String(obj.decimals));
+  el(`#lim${i}`).value = String(obj.rLimit);
+  // summary text update
+  const det = el(`#hdr${i}`).closest('details');
+  if(det){
+    const sum = det.querySelector('summary');
+    sum.textContent = `列${i+1}：${obj.header}`;
+  }
+}
+
+/* HTMLエスケープ（設定画面で安全に表示） */
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, ch=>{
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);
+  });
+}
+
+el('#settingBtn').onclick=()=>{
+  buildSettingsUI();
+  openModal(settingModal);
+};
+el('#settingCancel').onclick=()=>closeModal(settingModal);
+
+el('#settingSave').onclick=()=>{
+  // mode
+  settings.mode = (el('#modeSel').value==="mean" ? "mean" : "median");
+
+  // channels
+  for(let i=0;i<4;i++){
+    const v = el(`#chName${i}`).value || `CH${i+1}`;
+    settings.channels[i] = v;
+  }
+
+  // columns
+  for(let i=0;i<ALL_COLS;i++){
+    const obj = readColInputs(i);
+    settings.cols[i] = Object.assign({}, settings.cols[i], obj);
+    // decimals normalization
+    if(![null,1,2,3].includes(settings.cols[i].decimals)) settings.cols[i].decimals = null;
+    settings.cols[i].n = (settings.cols[i].n===3?3:5);
+  }
+
+  saveSettings();
+  updateChannelButtons();
+  updateHeaders();
+  renderCells();
+  calc();
+  saveState();
+  closeModal(settingModal);
+};
+
+/* ===== JSONバックアップ／復元 ===== */
+function exportJson(){
+  try{
+    const backup={
+      type:"control-chart2-backup",
+      version:BACKUP_VERSION,
+      created:new Date().toISOString(),
+      settings:settings,
+      values:values,
+      selectedChannel:ch
+    };
+    const json=JSON.stringify(backup,null,2);
+    const blob=new Blob([json],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="管理図2_backup.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    console.log("exportJson error:",e);
+    alert("JSONの保存に失敗しました。");
+  }
+}
+
+function importJsonFile(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+
+      if(data && data.settings){
+        settings = Object.assign({}, DEFAULT_SETTINGS, data.settings);
+        // normalize
+        normalizeSettingsImport();
+        saveSettings();
+      }
+      if(data && data.values){
+        values = emptyMatrix();
+        for(let r=0;r<ROWS;r++){
+          for(let c=0;c<ALL_COLS;c++){
+            values[r][c] = String(data.values?.[r]?.[c] ?? "");
+          }
+        }
+      }
+      if(data && data.selectedChannel!=null){
+        const nn = Number(data.selectedChannel);
+        if(isFinite(nn)) ch = clamp(nn|0,0,3);
+      }
+      updateChannelButtons();
+      updateHeaders();
+      renderCells();
+      calc();
+      saveState();
+      alert("JSONから復元しました。");
+    }catch(err){
+      console.log("importJson error:",err);
+      alert("JSONの読み込みに失敗しました。");
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* import時の補完 */
+function normalizeSettingsImport(){
+  // reuse normalize logic (simpler)
+  settings.mode = (settings.mode==="mean" ? "mean" : "median");
+  if(!Array.isArray(settings.channels) || settings.channels.length!==4){
+    settings.channels = [...DEFAULT_SETTINGS.channels];
+  }
+  if(!Array.isArray(settings.cols) || settings.cols.length!==ALL_COLS){
+    settings.cols = [...DEFAULT_SETTINGS.cols];
+  }
+  for(let i=0;i<ALL_COLS;i++){
+    const base = Object.assign({}, DEFAULT_SETTINGS.cols[i], settings.cols[i]||{});
+    base.n = (base.n===3?3:5);
+    base.header = String(base.header ?? `項目${i+1}`);
+    base.decimals = (base.decimals===null?null:Number(base.decimals));
+    if(![null,1,2,3].includes(base.decimals)) base.decimals = null;
+    base.rLimit = Number(base.rLimit);
+    if(!isFinite(base.rLimit)) base.rLimit = 0;
+    settings.cols[i] = base;
+  }
+}
+
+el('#exportJsonBtn').addEventListener('click',exportJson);
+el('#importJsonBtn').addEventListener('click',()=>el('#jsonFileInput').click());
+el('#jsonFileInput').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file){e.target.value="";return;}
+  importJsonFile(file);
+  e.target.value="";
+});
+
+/* ===== 初期化 ===== */
+updateChannelButtons();
+updateHeaders();
+renderCells();
+calc();
+focusCell(0,0);
+saveState();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
