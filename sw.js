@@ -1,5 +1,5 @@
 /* 管理図2 service worker */
-const CACHE_NAME = 'control-chart2-v3';
+const CACHE_NAME = 'control-chart2-v4';
 const PRECACHE = [
   './',
   './index.html',
