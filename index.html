@@ -112,7 +112,7 @@
   .chbar{
     margin-top:8px;
     display:grid;
-    grid-template-columns:repeat(4,1fr);
+    grid-template-columns:repeat(5,1fr);
     gap:10px;
     max-width:var(--w);
   }
@@ -282,15 +282,7 @@
     max-width:min(92vw,520px);
     text-align:center;
   }
-  /* 設定モーダルのタイトル「設定」だけ少し下げる */
-  #settingModal .dlg h2{
-  margin-top: 20px;   /* 好みで 8〜20px */
-  }
 </style>
-
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
 </head>
 <body>
 
@@ -338,6 +330,7 @@
     <button class="chbtn" data-ch="1">CH2</button>
     <button class="chbtn" data-ch="2">CH3</button>
     <button class="chbtn" data-ch="3">CH4</button>
+    <button class="chbtn" data-ch="4">CH5</button>
   </div>
 </div>
 
@@ -398,7 +391,7 @@
 <script>
 /* ===== 定数とキー ===== */
 const VISIBLE_COLS = 4;
-const ALL_COLS = 16;
+const ALL_COLS = 20;
 const ROWS = 5; // No.1〜No.5 固定
 const KEY_VALUES = "control-chart2-values-v1";
 const KEY_SETTINGS = "control-chart2-settings-v1";
@@ -406,7 +399,7 @@ const BACKUP_VERSION = 1;
 
 const DEFAULT_SETTINGS = {
   mode: "median", // "median" = x̃, "mean" = x̄
-  channels: ["CH1","CH2","CH3","CH4"],
+  channels: ["CH1","CH2","CH3","CH4","CH5"],
   cols: Array.from({length: ALL_COLS}, (_,i)=>({
     n: 5,
     header: `項目${i+1}`,
@@ -437,7 +430,7 @@ let settings = (()=>{ try{
 (function normalizeSettings(){
   if(!settings || typeof settings!=="object") settings = DEFAULT_SETTINGS;
   settings.mode = (settings.mode==="mean" ? "mean" : "median");
-  if(!Array.isArray(settings.channels) || settings.channels.length!==4){
+  if(!Array.isArray(settings.channels) || settings.channels.length!==5){
     settings.channels = [...DEFAULT_SETTINGS.channels];
   }
   if(!Array.isArray(settings.cols) || settings.cols.length!==ALL_COLS){
@@ -474,7 +467,7 @@ let values = (()=>{ try{
 })();
 
 /* ===== チャンネル ===== */
-let ch = 0; // 0..3
+let ch = 0; // 0..4
 function saveState(){
   saveSettings();
   localStorage.setItem(KEY_VALUES, JSON.stringify(values));
@@ -483,7 +476,7 @@ function saveState(){
 (function loadSelectedCh(){
   const s = localStorage.getItem("control-chart2-selected-ch");
   const n = Number(s);
-  if(isFinite(n)) ch = Math.max(0, Math.min(3, n|0));
+  if(isFinite(n)) ch = Math.max(0, Math.min(4, n|0));
 })();
 
 function colOffset(){ return ch * VISIBLE_COLS; }
@@ -732,7 +725,7 @@ document.querySelectorAll('.pad button').forEach(bindPadButton);
 
 /* ===== チャンネル切替 ===== */
 function switchChannel(next){
-  const n = clamp(next,0,3);
+  const n = clamp(next,0,4);
   if(n===ch) return;
   ch = n;
   updateHeaders();
@@ -797,16 +790,16 @@ function buildSettingsUI(){
         <label style="margin-top:8px">CH${i+1}（列${i*4+1}〜${i*4+4}）</label>
         <input type="text" id="chName${i}" value="${escapeHtml(name)}">
       `).join('')}
-      <button id="applyCh1AllBtn" class="ghost" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;color:#fff;font-weight:900;box-shadow:0 2px 0 #666;">CH1の列設定をCH2〜CH4へコピー</button>
-      <div class="miniNote">列1→5/9/13、列2→6/10/14…のように上書きコピーします。</div>
+      <button id="applyCh1AllBtn" class="ghost" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;color:#fff;font-weight:900;box-shadow:0 2px 0 #666;">CH1の列設定をCH2〜CH5へコピー</button>
+      <div class="miniNote">列1→5/9/13/17、列2→6/10/14/18…のように上書きコピーします。</div>
     </div>
   `);
 
-  // 列設定（1〜16）
+  // 列設定（1〜20）
   form.insertAdjacentHTML('beforeend', `
     <div style="border-top:1px solid #ccc;margin-top:10px;padding-top:8px">
-      <label>列別設定（1〜16）</label>
-      <div class="miniNote">CH切替は表示窓（1〜4 / 5〜8 / 9〜12 / 13〜16）の切替です。ここで列ごとの設定を行います。</div>
+      <label>列別設定（1〜20）</label>
+      <div class="miniNote">CH切替は表示窓（1〜4 / 5〜8 / 9〜12 / 13〜16 / 17〜20）の切替です。ここで列ごとの設定を行います。</div>
       ${settings.cols.map((col,i)=>`
         <details ${i<4?'open':''}>
           <summary>列${i+1}：${escapeHtml(col.header||`項目${i+1}`)}</summary>
@@ -841,7 +834,7 @@ function buildSettingsUI(){
     // 列1〜4の設定を、+4, +8, +12 へコピー
     for(let base=0;base<4;base++){
       const src = readColInputs(base);
-      for(const off of [4,8,12]){
+      for(const off of [4,8,12,16]){
         writeColInputs(base+off, src);
       }
     }
@@ -889,7 +882,7 @@ el('#settingSave').onclick=()=>{
   settings.mode = (el('#modeSel').value==="mean" ? "mean" : "median");
 
   // channels
-  for(let i=0;i<4;i++){
+  for(let i=0;i<5;i++){
     const v = el(`#chName${i}`).value || `CH${i+1}`;
     settings.channels[i] = v;
   }
@@ -961,7 +954,7 @@ function importJsonFile(file){
       }
       if(data && data.selectedChannel!=null){
         const nn = Number(data.selectedChannel);
-        if(isFinite(nn)) ch = clamp(nn|0,0,3);
+        if(isFinite(nn)) ch = clamp(nn|0,0,4);
       }
       updateChannelButtons();
       updateHeaders();
@@ -981,7 +974,7 @@ function importJsonFile(file){
 function normalizeSettingsImport(){
   // reuse normalize logic (simpler)
   settings.mode = (settings.mode==="mean" ? "mean" : "median");
-  if(!Array.isArray(settings.channels) || settings.channels.length!==4){
+  if(!Array.isArray(settings.channels) || settings.channels.length!==5){
     settings.channels = [...DEFAULT_SETTINGS.channels];
   }
   if(!Array.isArray(settings.cols) || settings.cols.length!==ALL_COLS){
@@ -1016,14 +1009,5 @@ calc();
 focusCell(0,0);
 saveState();
 </script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
-  }
-</script>
-
 </body>
 </html>
